@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>AI教练</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+</head>
+
+<body id="app">
+
+<div class="banner_image" id="banner_container" data-bind="click: hideContent">
+    <div class="floating_title" data-bind="text: myBannerTitle"></div>
+</div>
+
+<bot id="bot_container" params="{ root: $root }" data-bind="visible: botPage"></bot>
+
+<mapview id="map_container" params="{ root: $root }" class="w-full" data-bind="visible: mapPage"></mapview>
+
+<tpdetail id="tp_container" params="{ root: $root }" class="w-full" data-bind="visible: tpPage"></tpdetail>
+
+
+<div id="loadingView" class="anim_fade_image" data-bind="visible: loadingShow">
+    <img data-bind="attr: { src: spinImg}"/>
+</div>
+
+<div id="loadingViewSmall" class="anim_fade_image" data-bind="visible: loadingShowSmall">
+    <img data-bind="attr: { src: spinImg2}"/>
+</div>
+
+<div id="ifrmname" style="display:none;">
+    <iframe id="ifrmnameInter" sandbox="allow-scripts" src="https://s2.odainfra.com" height="90vh" width="90%"
+            style="z-index: 999;top: 0px; left: 0px; width: 100%; height: 100vh;">
+    </iframe>
+</div>
+
+
+</body>
+</html>

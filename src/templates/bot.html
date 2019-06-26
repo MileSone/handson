@@ -1,0 +1,90 @@
+<div class="w-full">
+    <!-- content -->
+    <div id="content" class="w-full bannerOn">
+        <div class="p-2" >
+            <!-- ko foreach: { data: messages, as: 'message' } -->
+            <div class="flex flex-row">
+                <!-- ko if: message.showAvatar -->
+                <div class="w-10">
+                    <div class="flex items-center justify-center w-10 h-10" onclick="showContent()">
+                        <img src="./img/aiicon.png">
+                    </div>
+                    <p class="mt-2 w-10 pt-1 text-center text-xs text-cus-black"
+                       data-bind="text: message.timestamp"></p>
+                </div>
+                <!-- /ko -->
+
+                <!-- ko ifnot: message.showAvatar -->
+                <div class="w-10">
+                    <div class="flex items-center justify-center w-10 h-10"></div>
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: message.type === 'text-mz' -->
+                <text-mz class="w-full" params="{ message: message, bot: $parent }"></text-mz>
+                <!-- /ko -->
+
+                <!-- ko if: message.type === 'text' -->
+                <div class="w-full pl-2">
+                    <div class="max-w leading-loose mb-6 p-3 rounded-larger text-sm text-white bg-answer" data-bind="text: message.body"></div>
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: message.type === 'question' -->
+                <div class="w-full pl-2">
+                    <div class="flex flex-row-reverse">
+                        <div class="max-w mb-6 p-3 text-sm text-black bg-question float-right"
+                             data-bind="text: message.body"></div>
+                    </div>
+                </div>
+                <!-- /ko -->
+
+
+                <!-- ko if: message.type === 'answer' -->
+                <answer class="w-full" params="{ message: message, bot: $parent }"></answer>
+                <!-- /ko -->
+            </div>
+            <!-- /ko -->
+
+            <!-- loading -->
+            <div class="flex flex-row" data-bind="if: loading">
+                <div class="w-10">
+                    <div class="flex items-center justify-center w-10 h-10">
+                        <img src="img/aiicon.png">
+                    </div>
+                </div>
+                <div class="pl-2">
+                    <div class="mb-6 p-3 rounded-larger text-sm text-white bg-answer" style="padding-bottom: 10px;">
+                        <svg class="fill-current ml-2 mr-2" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+              xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="33px" height="12px" viewBox="0 0 24 12" color="#31d3ae"
+              style="enable-background:new 0 0 50 50;" xml:space="preserve">
+              <circle cx="2" cy="4" r="4"  fill="#31d3ae">
+                <animate attributeName="opacity" attributeType="XML" values="1; .1; 1" begin="0s" dur="0.6s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="13" cy="4" r="4" fill="#31d3ae">
+                <animate attributeName="opacity" attributeType="XML" values="1; .1; 1" begin="0.2s" dur="0.6s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="24" cy="4" r="4" fill="#31d3ae">
+                <animate attributeName="opacity" attributeType="XML" values="1; .1; 1" begin="0.4s" dur="0.6s" repeatCount="indefinite" />
+              </circle>
+            </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- input -->
+<div class="fixed w-full pin-b h-16 pl-2 pr-3 pt-2 pb-2 bot_input_container" style="font-size: 23px">
+    <div class="flex flex-row border border-solid border-white-theme shadow inputLeft">
+        <input type="text" class="flex w-full pl-2 pr-3 font-sans trans_class" placeholder="在这里提问..."
+               data-bind="textInput: question, event: { keypress: onEnterKey }">
+    </div>
+    <div class="items-center justify-center inputRight" data-bind="click: onSubmit">
+        <div class="flex items-center justify-center rounded-full w-8 shadow cursor-pointer">
+            <img src="img/sendBtn.png" width="26px">
+        </div>
+    </div>
+</div>

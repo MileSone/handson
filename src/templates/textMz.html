@@ -1,0 +1,13 @@
+<div class="w-full pl-3">
+  <div class="mzView max-w mb-6 bg-answer">
+    <div id="mztitle" data-bind="text: title"></div>
+    <div class="body" class="leading-loose p-3 rounded-t-larger text-sm text-white" data-bind="text: '&emsp;&emsp;' + body()"></div>
+    <!-- ko foreach:  { data: message.actions, as: 'actions' } -->
+    <div class="btn flex flex-row h-10 ending_round_border">
+      <div class="flex flex-1 items-center justify-center border-child text-sm text-btn-style cursor-pointer bg-grey-lighter hover:bg-blue-lightest"  data-bind="click: $parent.clickOnList ,clickBubble : false">
+         <div data-bind="text: actions.label"></div>
+      </div>
+    </div>
+    <!-- /ko -->
+  </div>
+</div>
