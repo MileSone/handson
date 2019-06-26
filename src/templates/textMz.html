@@ -5,7 +5,7 @@
     <!-- ko foreach:  { data: message.actions, as: 'actions' } -->
     <div class="btn flex flex-row h-10 ending_round_border">
       <div class="flex flex-1 items-center justify-center border-child text-sm text-btn-style cursor-pointer bg-grey-lighter hover:bg-blue-lightest"  data-bind="click: $parent.clickOnList ,clickBubble : false">
-         <div data-bind="text: actions.label"></div>
+         <div data-bind="text: actions.text"></div>
       </div>
     </div>
     <!-- /ko -->
