@@ -20,23 +20,23 @@
 	d.ODA里在Flows里start上添加方法：
 	
 
-  LoadUserContext:
-    component: "loadUserContext"
-    properties:
-      userName: "${name.value}" 
-    transitions:
-      next: "askNameEchotoUI"  
-  askNameEchotoUI:
-    component: "System.List"
-    properties:
-      prompt: "handson@+@${output.value}"
-      options:
-      - label: "确定"
-        value: "yes"
-        keyword: "接受,好,yes,ok"      
-    transitions: 
-      actions:
-        yes: "yesBtn"
+			LoadUserContext:
+				component: "loadUserContext"
+				properties:
+					userName: "${name.value}" 
+				transitions:
+					next: "askNameEchotoUI"  
+			askNameEchotoUI:
+				component: "System.List"
+				properties:
+					prompt: "handson@+@${output.value}"
+					options:
+					- label: "确定"
+						value: "yes"
+						keyword: "接受,好,yes,ok"      
+				transitions: 
+					actions:
+						yes: "yesBtn"
 	
 	
 
