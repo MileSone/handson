@@ -1,11 +1,10 @@
+import Smooch from 'smooch'
 import ko from 'knockout'
 import format from 'date-fns/format'
+import axios from 'axios'
+import store from 'store'
+import uuidv4 from 'uuid/v4'
 import botTemplate from '../templates/bot.html'
-import './sampleList.js'
-import './mapHtml.js'
-import './popUp.js'
-import './tpDash.js'
-import './trainningPlan.js'
 import './textMz.js'
 import config from '../config.js'
 import VConsole from 'vconsole'
@@ -123,8 +122,8 @@ class BotViewModel {
                 console.log("Waiting for connection & initialization be ready...");
                 await sleep(1000);
             }
-            lastMess = self.question()
-            self.sendMessage(self.question());
+
+            Smooch.sendMessage(self.question())
             console.log("*Question: ", self.question())
 
             await self.recordQuestion(self.question())
@@ -157,7 +156,7 @@ class BotViewModel {
             return messages
         })
 
-        botOps.appendQuestion = self.appendQuestion = async function (question) {
+        self.appendQuestion = async function (question) {
             const message = {
                 type: 'question',
                 timestamp: format(new Date(), 'HH:mm'),
@@ -203,68 +202,21 @@ class BotViewModel {
         }
 
         self.botInitialized = ko.observable(false)
-        self.wsParam = {
-            "SO_SUFFIX": Math.ceil(Math.random() * 100000000),
-            "MAX_RETRIES": 300,
-            "retryTimes": 0,
-            "SocketSessionExpire": 240,
-            "LAST_ACTIVITY_TIME": Date.now() / 1000 | 0,
-            "currentConnection": null,
-            "ws": null,
-            "isForceClosed": false,
-            "initLck": false,
-            "messageToBot": {
-                "to": {
-                    "type": "bot",
-                    "id": config.botName
-                }
-            }
-        }
-        self.initWebSocket = async function () {
-            if (self.wsParam["initLck"] === true) {
-                console.log("Last connect is still in progress...");
-                return;
-            }
-            debug("init websocket");
-            self.wsParam["initLck"] = true;
-            self.wsParam["currentConnection"] = config.wsServer + "?token="
-                + self.token + "&v=" + self.wsParam["SO_SUFFIX"];
-            debug("Init ws: " + self.wsParam["currentConnection"]);
-            try {
-                let ws = new WebSocket(self.wsParam["currentConnection"]);
-                self.wsParam["ws"] = ws;
-            } catch (err) {
-                self.wsParam["ws"] = null;
-                self.wsParam["initLck"] = false;
-                console.error(err.name + ":: " + err.message);
-                alert("Failed to connect to the server. " + err.name
-                    + "::" + err.message + ", please try again!");
-            }
-            if (self.wsParam["ws"] === null) return;
-            self.wsParam["isForceClosed"] = false;
-            self.wsParam["ws"].onopen = function (evt) {
-                self.botInitialized(true);
-                self.wsParam["initLck"] = false;
-                self.placeholderText('在这里提问...');
-            }
-            self.wsParam["ws"].onmessage = function (evt) {
+
+        self.initSmooch = async function () {
+            Smooch.on('ready', () => {
+                self.botInitialized(true)
+                console.log('Bot initialized')
+                console.log(Smooch)
+            });
+
+            Smooch.on('message:received', message => {
                 if (!self.botInitialized()) {
-                    console.error("Initialization incompleted!", self.wsParam["currentConnection"]);
+                    console.warn("Connection is not ready for communication yet!")
                     return
                 }
-
-                let resp = JSON.parse(evt.data);
-                if (resp.error && resp.error.code === 103) {
-                    // Got hb resp, ignore.
-                    return;
-                }
-
-                let message = resp.body.messagePayload;
-                self.token = encodeURIComponent(resp.from.token);
-                console.log("Message received: ", message);
-                isNotReconnect = true;
-                self.loading(true);
-
+                self.loading(false)
+                console.log('Message received:', message)
                 if (message.type === 'text' && message.text === '_SORRY_') {
                     if (self.errorTimes() === 0) {
                         self.appendMessageNoWait({
@@ -281,31 +233,6 @@ class BotViewModel {
                     }
                     self.sayHelloNoWait()
                     self.errorTimes(self.errorTimes() + 1)
-                } else if (message.type === 'text' && message.text.startsWith("@tpDash")) {
-
-
-                    const pair = message.text.split('\n\n\n')
-                    const answer = pair[pair.length - 1]
-                    var comingMessage;
-                    comingMessage = {
-                        type: 'tp-dash',
-                        timestamp: format(new Date(), 'HH:mm'),
-                        body: answer,
-                        actions: message.actions
-                    }
-                    self.appendMessageNoWait(comingMessage)
-                } else if (message.type === 'text' && message.text.startsWith("@mapWin")) {
-                    const pair = message.text.split('\n\n\n')
-                    const answer = pair[pair.length - 1]
-
-                    var comingMessage;
-                    comingMessage = {
-                        type: 'map-html',
-                        timestamp: format(new Date(), 'HH:mm'),
-                        body: answer,
-                        actions: message.actions
-                    }
-                    self.appendMessageNoWait(comingMessage)
                 } else if (message.type === 'text') {
 
                     const pair = message.text.split('\n\n\n')
@@ -313,7 +240,7 @@ class BotViewModel {
                     var comingMessage;
                     if (message.actions) {
 
-                        if(message.text.startsWith("免责声明")){
+                        if(message.text.startsWith("handson")){
                             comingMessage = {
                                 type: 'text-mz',
                                 timestamp: format(new Date(), 'HH:mm'),
@@ -322,7 +249,7 @@ class BotViewModel {
                             }
                         }else{
                             comingMessage = {
-                                type: 'sample-list',
+                                type: 'text',
                                 timestamp: format(new Date(), 'HH:mm'),
                                 body: answer,
                                 actions: message.actions
@@ -332,23 +259,19 @@ class BotViewModel {
                         self.appendMessageNoWait(comingMessage)
                     } else {
 
+                    console.log("no binding templates")
+                    const pair = message.text.split('\n\n\n')
+                    const answer = pair[pair.length - 1]
+                    var comingMessage;
+                    comingMessage = {
+                        type: 'text',
+                        timestamp: format(new Date(), 'HH:mm'),
+                        body: answer
+                    }
+                    self.appendMessageNoWait(comingMessage)
+                    syncScrollDown()
 
-                        if (message.text == "Your session has expired.  Please start again."){
-                            isNotReconnect = false;
-                            self.loading(true);
-                            if (lastMess != ""){
-                                self.sendMessage(lastMess);
-                            } else{
-                                self.sendMessage("hi");
-                            }
-                        }else {
-                            comingMessage = {
-                                type: 'text',
-                                timestamp: format(new Date(), 'HH:mm'),
-                                body: answer
-                            }
-                            self.appendMessageNoWait(comingMessage)
-                        }
+                    return
                     }
                 } else if (message.type === 'card') {
 
@@ -373,173 +296,99 @@ class BotViewModel {
                 }
 
                 syncScrollDown()
-            }
-            self.wsParam["ws"].onclose = function () {
-                debug("Connection is closed...");
-                self.dispose(true);
-            }
-            self.wsParam["ws"].onerror = function (error) {
-                debug("Websocket goes to ERROR");
-                self.dispose();
-            }
+            });
+
+            await Smooch.init({
+                appId: config.botAppId,
+                userId: self.userID
+            });
         }
 
-        self.initWebSocketIfNeeded = async function () {
-            debug("init websocketIF");
-            let connection = config.wsServer + "?token=" + self.token
-                + "&v=" + self.wsParam["SO_SUFFIX"];
-            if (connection !== self.wsParam["currentConnection"]) {
-                await self.initWebSocket();
-            }
-        }
-
-        botOps.sendMessage = self.sendMessage = async function (msgToSend, type) {
-            var msgType = type || 'text';
-            if (!msgToSend || /^\s*$/.test(msgToSend)) {
-                console.warn("! Message to be sent is empty!");
-                return;
-            }
-            if (msgType === 'text') {
-                self.wsParam["messageToBot"].messagePayload = {
-                    type: "text",
-                    text: msgToSend
-                };
-            } else if (msgType === 'postback') {
 
 
-                self.wsParam["messageToBot"].messagePayload = {
-                    type: "postback",
-                    postback: msgToSend
-                };
-            } else {
-                console.error("Message type not supported yet: " + msgType);
-                return;
-            }
 
-            if (!msgToSend.t || msgToSend.t !== 'hb') {
-                self.loading(true);
-            } else {
-                self.loading(false);
-            }
-
-            await self.sendToBot(self.wsParam["messageToBot"]);
-        };
-
-        // send message to the bot
-        self.sendToBot = async function (message) {
-            debug("Sending message to bot", message);
-
-            let timeSecs = Date.now() / 1000 | 0;
-            if (timeSecs - self.wsParam["LAST_ACTIVITY_TIME"] >= self.wsParam["SocketSessionExpire"]) {
-                debug("Socket session expired: " + self.wsParam["currentConnection"]);
-                self.dispose();
-            }
-
-            let success = false;
-            do {
-                success = await self.waitForSocketConnection(async () => {
-                    timeSecs = Date.now() / 1000 | 0;
-                    self.wsParam["LAST_ACTIVITY_TIME"] = timeSecs;
-                    self.wsParam["ws"].send(JSON.stringify(message));
-                    // debug('Message sent: ' + JSON.stringify(message));
-                });
-                if(!success) {
-                    await sleep(1000);
-                }
-            } while(!success);
-        }
-
-        self.waitForSocketConnection = async function (callback) {
-            if (self.wsParam["isForceClosed"] === true) {
-                debug("Previous WebSocket down. Reconnecting...");
-                while (self.wsParam["ws"] === null) {
-                    await self.initWebSocket();
-                    if (self.wsParam["ws"] === null) {
-                        await sleep(1000);
-                        console.warn("Connection cannot be established, retrying...");
-                    } else if(self.wsParam["ws"].readyState === 2 || self.wsParam["ws"].readyState === 3){
-                        debug("WebSocket is closing or closed.");
-                        // self.wsParam["ws"] = null;
-                        self.dispose();
-                    } else {
-                        debug("WebSocket is reconnecting or reconnected.")
-                    }
-                }
-            }
-
-            let socket = self.wsParam["ws"];
-            if(socket === null || typeof socket === 'undefined') {
-                self.dispose(true);
-                console.error("!!! This should never happend! Discard " +
-                    "sending the message to bot!");
-                return false;
-            }
-
-            while (socket.readyState === 0) { // Connecting
-                let socket2 = self.wsParam["ws"];
-                if(socket !== socket2) {
-                    try{socket.close();}catch(err){}
-                    return false;
-                }
-                debug("Waiting for connection open: " + self.wsParam["currentConnection"]);
-                await sleep(1000);
-            }
-            if (socket.readyState === 1) { // Connected
-                self.wsParam["retryTimes"] = 0;
-                if (callback) {
-                    callback();
-                }
-                return true;
-            } else { // Closing or Closed
-                self.wsParam["retryTimes"] = self.wsParam["retryTimes"] + 1;
-                if (self.wsParam["retryTimes"] > self.wsParam["MAX_RETRIES"]) {
-                    console.error("!!! Connection error, websocket is closing or closed! " +
-                        "Discard sending the message to bot!!",self.wsParam["currentConnection"]);
-                } 
-                return false;
-            }
-        }
-
-        self.dispose = function (closed) {
-            let directRemove = closed || false;
-            if(directRemove) {
-                self.wsParam["ws"] = null;
-            } else {
-                debug("Close socket...");
-            }
-            if (self.wsParam["ws"]) {
-                try {
-                    self.wsParam["ws"].close();
-                } catch (err) { }
-                self.wsParam["ws"] = null;
-            }
-            self.loading(false);
-            self.wsParam["isForceClosed"] = true;
-            self.wsParam["retryTimes"] = 0;
-            self.wsParam["SO_SUFFIX"] = Math.ceil(Math.random() * 100000000);
-            self.botInitialized(false);
-            self.wsParam["initLck"] = false;
-        };
 
         self.initialize = async function () {
-            self.token = encodeURIComponent(GetQueryString("token4ai"));
-            // console.log("self.token" + self.token);
-            self.initWebSocketIfNeeded();
-            setInterval(() => {
-                self.sendToBot({ "t": "hb" });
-            }, 55000);
-            self.sendMessage("hi");
+            if (store.get('userId')) {
+                self.userId = store.get('userId')
+            } else {
+                self.userId = uuidv4()
+                store.set('userId', self.userId)
+            }
 
+            self.initSmooch();
+
+            // self.loading(true)
+            //const checkPromise = axios.post(`${config.botGateway}/bot/blacklist/check`, { user_id: self.userId })
+            // const settingPromise = axios.get(`${config.botGateway}/bot/settings`)
+            // const topicPromise = axios.get(`${config.botGateway}/bot/trendingTopics`)
+            // const categoryPromise = axios.get(`${config.botGateway}/bot/categories`)
+            // const [settingResponse, topicResponse, categoryResponse] = await Promise.all([settingPromise, topicPromise, categoryPromise])
+            // if (checkResponse.data === 'BLOCKED') {
+            //   self.blocked(true)
+            //   self.loading(false)
+            //   await self.youAreBlocked()
+            //   return
+            // }
+            // self.settings = settingResponse.data.payload
+
+            // self.loading(false)
+
+            // self.trendingMessage = {
+            //   type: 'trending',
+            //   timestamp: format(new Date(), 'HH:mm'),
+            //   topics: topicResponse.data.payload,
+            //   categories: categoryResponse.data.payload
+            // }
+
+            // self.messageList([{
+            //     type: 'text',
+            //     timestamp: format(now, 'HH:mm'),
+            //     body: `${hello}，` + '我是智能客服小马，有什么我能够帮您的吗？'
+            // }])
+            // await self.sayHello()
+
+            // await self.appendQuestion('hi')
+            while (!self.botInitialized()) {
+                console.log("Waiting to connection be ready...");
+                await sleep(500);
+            }
+
+            self.userID = GetQueryString("userid");
+            console.log("self.userID" + self.userID);
+
+            // const conversation = Smooch.getConversation();
+            //
+            // console.log(conversation.messages);
+            // console.log(Smooch.getUser());
+            //
+            // Smooch.updateUser({
+            //     givenName: 'self.userID',
+            //     surname: 'self.userID',
+            //     email: 'steveb@channel5.com',
+            //     signedUpAt: Date.now(),
+            //     properties: {
+            //         premiumUser: true,
+            //         numberOfPurchases: 20,
+            //         itemsInCart: 3,
+            //         couponCode: 'PREM_USR'
+            //     }
+            // });
+
+            await deferedScrollDown()
         }
 
-        self.initialize();
 
+
+
+        self.initialize()
     }
 }
 
 
-function GetQueryString(name) {
-    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+function GetQueryString(name)
+{
+    var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
     var r = window.location.search.substr(1).match(reg);
     if(r!=null)return unescape(r[2]); return null;
 }
@@ -579,9 +428,3 @@ self.showContent = function () {
     // addClass(document.getElementById("content"), 'bannerOn');
     // removeClass(document.getElementById("banner_container"), 'hide_view');
 }
-
-const botOps = {
-    sendMessage: null,
-    appendQuestion: null
-}
-export default botOps;

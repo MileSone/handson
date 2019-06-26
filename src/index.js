@@ -4,7 +4,6 @@ import './components/bot.js'
 import './style.css'
 import axios from "axios";
 import config from "./config";
-import tpDops from "./components/trainningPlan";
 
 class DummyIndexViewModel {
     constructor() {
