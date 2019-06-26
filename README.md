@@ -7,7 +7,7 @@
         a. npx webpack 
         b. npm run dev 
 
-3.复习连接
+3.复习Code内容
 
 4.打开ODA：Skill Handson
 	
@@ -18,11 +18,26 @@
 	c.ODA里查看下CC已经加载的CC
 	
 	d.ODA里在Flows里start上添加方法：
-	  LoadUserContext:
-    		component: "loadUserContext"
-    		properties:
-      		userName: "${name.value}" 
-    		transitions:
-      		next: "start"
+	
+
+  LoadUserContext:
+    component: "loadUserContext"
+    properties:
+      userName: "${name.value}" 
+    transitions:
+      next: "askNameEchotoUI"  
+  askNameEchotoUI:
+    component: "System.List"
+    properties:
+      prompt: "handson@+@${output.value}"
+      options:
+      - label: "确定"
+        value: "yes"
+        keyword: "接受,好,yes,ok"      
+    transitions: 
+      actions:
+        yes: "yesBtn"
+	
+	
 
 5.浏览器打开  localhost:9000  进行测试 
