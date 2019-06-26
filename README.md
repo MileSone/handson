@@ -12,8 +12,11 @@
 4.打开ODA：Skill Handson
 	
         a.代码里打开CC/examples/loadUserContext.js
+	
 	b. 在ODA里建一个值，variables：      output: "string"
+	
 	c.ODA里查看下CC已经加载的CC
+	
 	d.ODA里在Flows里start上添加方法：
 	  LoadUserContext:
     		component: "loadUserContext"
