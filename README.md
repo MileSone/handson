@@ -9,7 +9,7 @@
 
 3.复习Code内容
 
-4.打开ODA：Skill Handson
+4.打开ODA：Skill Handson  | CC - http://132.145.114.228:9089/components/     user Name: MyTestUser   password:MyTestPassword
 	
         a.代码里打开CC/examples/loadUserContext.js
 	
